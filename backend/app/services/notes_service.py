@@ -55,12 +55,39 @@ def delete_note(db: Session, note: Note) -> None:
 
 def export_note(note: Note) -> str:
     """Export a note as formatted text."""
-    # Simpler export logic for JSON content
     lines = [
         f"TITLE: {note.title}",
         f"TAGS: {note.tags}" if note.tags else "",
         f"CREATED: {note.created_at}",
         "-" * 20,
-        str(note.content), # Content is JSON data
+        str(note.content),  # Content is rich JSON data
     ]
+    if note.attachments:
+        lines.append("\nATTACHMENTS:")
+        for a in note.attachments:
+            lines.append(f"  - {a.get('name')}  ({a.get('size_bytes', 0) // 1024} KB)")
     return "\n".join(lines)
+
+
+def add_attachment(db: Session, note: Note, attachment_meta: dict) -> Note:
+    """
+    Append a new attachment metadata dict to note.attachments and save.
+    SQLAlchemy needs a new list object to detect JSON column mutation.
+    """
+    current = list(note.attachments or [])
+    current.append(attachment_meta)
+    note.attachments = current          # reassign so SQLAlchemy detects change
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+def remove_attachment(db: Session, note: Note, stored_name: str) -> Note:
+    """
+    Remove an attachment entry by its stored_name from note.attachments.
+    """
+    current = list(note.attachments or [])
+    note.attachments = [a for a in current if a.get("stored_name") != stored_name]
+    db.commit()
+    db.refresh(note)
+    return note

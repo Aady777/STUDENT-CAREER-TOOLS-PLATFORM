@@ -38,9 +38,11 @@ services:
       - redis
     volumes:
       - .:/app
+      - uploads_data:/app/uploads
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   postgres_data:
   redis_data:
+  uploads_data:

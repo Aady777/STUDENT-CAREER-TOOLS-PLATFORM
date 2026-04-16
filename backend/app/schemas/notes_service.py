@@ -36,3 +36,11 @@ class NoteResponse(BaseModel):
 class NoteListResponse(BaseModel):
     notes: list[NoteResponse]
     total: int
+
+
+class AttachmentResponse(BaseModel):
+    name: str
+    stored_name: str
+    url: str
+    size_bytes: int
+    mime_type: str
