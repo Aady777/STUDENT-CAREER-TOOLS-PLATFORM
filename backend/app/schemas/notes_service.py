@@ -4,26 +4,29 @@ Pydantic schemas for Notes.
 
 from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any
 
 
 class NoteCreateRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, examples=["Physics Lecture 3"])
-    content: str = Field(..., min_length=1)
+    content: Any = Field(..., description="JSON content from editor")
     tags: str = Field(default="", examples=["physics,lecture,kinematics"])
 
 
 class NoteUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
-    content: str | None = None
+    content: Any | None = None
     tags: str | None = None
+    attachments: list[dict] | None = None
 
 
 class NoteResponse(BaseModel):
     id: int
     user_id: int
     title: str
-    content: str
+    content: Any
     tags: str
+    attachments: list[dict] = []
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
