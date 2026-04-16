@@ -8,6 +8,7 @@ from datetime import datetime
 
 class SubmitTestRequest(BaseModel):
     test_id: int
+    session_token: str = Field(..., description="Token received from POST /tests/{id}/start")
     answers: list[int] = Field(..., description="List of chosen option indices")
     time_taken_seconds: int | None = Field(default=None, ge=0)
 

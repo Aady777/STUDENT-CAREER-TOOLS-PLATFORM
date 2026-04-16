@@ -33,3 +33,11 @@ class TestResponse(BaseModel):
 class TestListResponse(BaseModel):
     tests: list[TestResponse]
     total: int
+
+
+class StartTestResponse(BaseModel):
+    test_id: int
+    session_token: str
+    duration_minutes: int
+    expires_in_seconds: int
+    message: str = "Test session started. Submit before time runs out!"
