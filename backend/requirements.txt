@@ -4,6 +4,7 @@ uvicorn[standard]==0.30.0
 pydantic[email]==2.9.0
 pydantic-settings==2.5.0
 aiofiles==24.1.0
+apscheduler==3.10.4
 
 # ── Database ─────────────────────────────────────────────
 sqlalchemy==2.0.35

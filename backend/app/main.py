@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.database import engine, Base, check_db_connection
 from app.core.redis import check_redis_connection
+from app.core.worker import start_worker, stop_worker
 from app.api.router import api_router
 
 # ── Import all models so Base.metadata knows about them ──
@@ -49,9 +50,13 @@ async def lifespan(app: FastAPI):
     # 3. Verify Redis (non-fatal warning if unavailable)
     check_redis_connection()
 
+    # 4. Start background worker (APScheduler)
+    start_worker()
+
     yield   # ── app is now live and serving ──────────────
 
     # Shutdown – dispose the connection pool cleanly
+    stop_worker()
     engine.dispose()
     logger.info("🛑 %s shut down. DB pool disposed.", settings.APP_NAME)
 
