@@ -26,13 +26,15 @@ def get_tasks(
     user_id: int,
     completed: bool | None = None,
     priority: str | None = None,
+    skip: int = 0,
+    limit: int = 50,
 ) -> list[Planner]:
     query = db.query(Planner).filter(Planner.user_id == user_id)
     if completed is not None:
         query = query.filter(Planner.is_completed == completed)
     if priority:
         query = query.filter(Planner.priority == priority)
-    return query.order_by(Planner.due_date.asc().nullslast(), Planner.created_at.desc()).all()
+    return query.order_by(Planner.due_date.asc().nullslast(), Planner.created_at.desc()).offset(skip).limit(limit).all()
 
 
 def get_task(db: Session, task_id: int, user_id: int) -> Planner | None:

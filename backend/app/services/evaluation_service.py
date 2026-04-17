@@ -5,9 +5,12 @@ Now includes Redis session validation to prevent:
   - Submitting after timer expires
   - Submitting with a forged/invalid session token
   - Double-submitting the same test session
+
+Also computes per-topic performance breakdown for analytics.
 """
 
 import logging
+from collections import defaultdict
 
 import redis
 from sqlalchemy.orm import Session
@@ -23,6 +26,26 @@ logger = logging.getLogger(__name__)
 class TestSessionExpiredError(Exception):
     """Raised when the test session has expired or is invalid."""
     pass
+
+
+def _compute_topic_breakdown(questions: list[dict], answers: list[int]) -> dict:
+    """
+    Group questions by their optional 'topic' field and count correct answers.
+
+    Returns a dict like:
+        {"Physics": {"total": 5, "correct": 4}, "General": {"total": 2, "correct": 2}}
+
+    Questions without a 'topic' key are grouped under "General".
+    """
+    breakdown: dict[str, dict[str, int]] = defaultdict(lambda: {"total": 0, "correct": 0})
+
+    for i, q in enumerate(questions):
+        topic = q.get("topic") or "General"
+        breakdown[topic]["total"] += 1
+        if i < len(answers) and answers[i] == q.get("correct"):
+            breakdown[topic]["correct"] += 1
+
+    return dict(breakdown)
 
 
 def evaluate_test(
@@ -64,7 +87,10 @@ def evaluate_test(
 
     score = round((correct / total) * 100, 2) if total > 0 else 0.0
 
-    # ── 4. Persist the result ─────────────────────────────
+    # ── 4. Compute topic-wise breakdown ───────────────────
+    topic_breakdown = _compute_topic_breakdown(questions, payload.answers)
+
+    # ── 5. Persist the result ─────────────────────────────
     result = Result(
         user_id=user_id,
         test_id=payload.test_id,
@@ -73,12 +99,13 @@ def evaluate_test(
         correct_answers=correct,
         answers=payload.answers,
         time_taken_seconds=payload.time_taken_seconds,
+        topic_breakdown=topic_breakdown,
     )
     db.add(result)
     db.commit()
     db.refresh(result)
 
-    # ── 5. End session (prevent double submission) ────────
+    # ── 6. End session (prevent double submission) ─────────
     session_service.end_session(
         redis_client=redis_client,
         user_id=user_id,
@@ -86,8 +113,8 @@ def evaluate_test(
     )
 
     logger.info(
-        "Test evaluated | user=%s | test=%s | score=%.1f%% (%d/%d)",
-        user_id, payload.test_id, score, correct, total,
+        "Test evaluated | user=%s | test=%s | score=%.1f%% (%d/%d) | topics=%s",
+        user_id, payload.test_id, score, correct, total, list(topic_breakdown.keys()),
     )
     return result
 

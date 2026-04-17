@@ -22,6 +22,7 @@ class ResultResponse(BaseModel):
     correct_answers: int
     answers: list[int] | None = None
     time_taken_seconds: int | None = None
+    topic_breakdown: dict | None = None
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}

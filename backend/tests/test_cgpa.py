@@ -1,46 +1,26 @@
 """
 Tests for CGPA calculation logic and API endpoints.
+
+Run inside Docker:  docker-compose exec api pytest tests/test_cgpa.py -v
 """
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base
-from app.core.dependencies import get_db
 from app.main import app
 from app.services.cgpa_service import calculate_cgpa
 from app.utils.grade_utils import grade_to_point
 
-# ── In-memory test DB ────────────────────────────────────
-TEST_DB_URL = "sqlite:///./test_student.db"
-engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base.metadata.create_all(bind=engine)
-
-
-def override_get_db():
-    db = TestSession()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 
 # ── Helper ───────────────────────────────────────────────
 def _register_and_login() -> str:
-    """Register a test user and return auth header token."""
+    """Register a unique test user and return auth Bearer token."""
     email = f"cgpa_test_{id(object())}@test.com"
     client.post("/api/auth/register", json={"email": email, "password": "testpass123"})
     resp = client.post("/api/auth/login", data={"username": email, "password": "testpass123"})
-    token = resp.json()["access_token"]
-    return token
+    return resp.json()["access_token"]
 
 
 # ── Unit tests ───────────────────────────────────────────
@@ -99,7 +79,6 @@ class TestCGPAAPI:
 
     def test_history_endpoint(self):
         token = _register_and_login()
-        # First create a record
         client.post(
             "/api/cgpa/calculate",
             json={"subjects": [{"subject": "CS", "grade": "O", "credits": 4}]},

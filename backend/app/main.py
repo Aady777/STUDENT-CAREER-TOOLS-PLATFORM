@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -15,6 +16,12 @@ from app.core.config import get_settings
 from app.core.database import engine, Base, check_db_connection
 from app.core.redis import check_redis_connection
 from app.core.worker import start_worker, stop_worker
+from app.core.error_handlers import (
+    validation_exception_handler,
+    http_exception_handler,
+    unhandled_exception_handler,
+)
+from fastapi import HTTPException
 from app.api.router import api_router
 
 # ── Import all models so Base.metadata knows about them ──
@@ -37,6 +44,7 @@ async def lifespan(app: FastAPI):
     Runs once on startup (before serving requests) and once on shutdown.
     - Creates all DB tables if they don't exist
     - Verifies DB & Redis connectivity
+    - Starts APScheduler background worker
     """
     logger.info("🚀 Starting %s v%s …", settings.APP_NAME, settings.APP_VERSION)
 
@@ -67,12 +75,17 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description=(
         "All-in-one student utility – CGPA calculator, study planner, "
-        "notes, mock tests & timetable."
+        "notes, mock tests, timetable & analytics."
     ),
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+# ── Global Error Handlers ─────────────────────────────────
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 # ── CORS ─────────────────────────────────────────────────
 app.add_middleware(

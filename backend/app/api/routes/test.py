@@ -5,6 +5,9 @@ New endpoints:
   POST /tests/{test_id}/start       → start a timed session (Redis)
   GET  /tests/{test_id}/time        → check remaining seconds
   POST /tests/submit                → submit answers (validated against Redis)
+
+Rate limiting:
+  POST /tests/submit                → 10 requests / 60 s per IP
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -13,7 +16,15 @@ import redis
 
 from app.core.dependencies import get_db, get_current_user
 from app.core.redis import get_redis
+from app.core.rate_limiter import RateLimiter
+from app.core.config import get_settings
 from app.models.user import User
+
+settings = get_settings()
+_submit_limiter = RateLimiter(
+    max_requests=settings.RATE_LIMIT_SUBMIT_MAX,
+    window_seconds=settings.RATE_LIMIT_SUBMIT_WINDOW,
+)
 from app.schemas.test_service import (
     TestCreateRequest,
     TestResponse,
@@ -144,6 +155,7 @@ def get_remaining_time(
     response_model=ResultResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Submit answers (session validated via Redis)",
+    dependencies=[Depends(_submit_limiter)],
 )
 def submit_test(
     body: SubmitTestRequest,

@@ -1,33 +1,14 @@
 """
 Tests for Study Planner API endpoints.
+
+Run inside Docker:  docker-compose exec api pytest tests/test_planner.py -v
 """
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base
-from app.core.dependencies import get_db
 from app.main import app
 
-# ── In-memory test DB ────────────────────────────────────
-TEST_DB_URL = "sqlite:///./test_student.db"
-engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base.metadata.create_all(bind=engine)
-
-
-def override_get_db():
-    db = TestSession()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 
 def _register_and_login() -> str:
@@ -57,7 +38,6 @@ class TestPlannerAPI:
 
     def test_list_tasks(self):
         token = _register_and_login()
-        # Create two tasks
         for title in ["Task A", "Task B"]:
             client.post(
                 "/api/planner/",

@@ -20,6 +20,17 @@ class Result(Base):
     correct_answers = Column(Integer, nullable=False)
     answers = Column(JSON, nullable=True)              # user's submitted answers
     time_taken_seconds = Column(Integer, nullable=True)
+    # ── Analytics: per-topic breakdown ─────────────────────
+    topic_breakdown = Column(JSON, nullable=True)
+    """
+    topic_breakdown schema:
+    {
+        "Physics": {"total": 5, "correct": 4},
+        "Chemistry": {"total": 3, "correct": 1},
+        "General": {"total": 2, "correct": 2}
+    }
+    Questions without a 'topic' field are grouped under "General".
+    """
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="results")

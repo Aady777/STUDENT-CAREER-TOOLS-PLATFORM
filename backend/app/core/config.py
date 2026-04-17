@@ -35,7 +35,27 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # ── CORS ─────────────────────────────────────────────
+    # Development:  CORS_ORIGINS=["*"]
+    # Production:   CORS_ORIGINS=["https://yourdomain.com"]
     CORS_ORIGINS: list[str] = ["*"]
+
+    # ── Rate Limiting ────────────────────────────────────
+    # Fine-tune via environment variables for production hardening
+    RATE_LIMIT_LOGIN_MAX: int = 5       # requests per window
+    RATE_LIMIT_LOGIN_WINDOW: int = 60   # seconds
+    RATE_LIMIT_REGISTER_MAX: int = 3
+    RATE_LIMIT_REGISTER_WINDOW: int = 60
+    RATE_LIMIT_SUBMIT_MAX: int = 10
+    RATE_LIMIT_SUBMIT_WINDOW: int = 60
+
+    # ── SMTP / Email Notifications ───────────────────────
+    # Set NOTIFICATIONS_ENABLED=True and fill SMTP_* to activate real emails.
+    NOTIFICATIONS_ENABLED: bool = False
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@student-utility.app"
 
     model_config = {
         "env_file": ".env",
