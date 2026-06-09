@@ -4,7 +4,7 @@ import 'routes/app_routes.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/theme_provider.dart';
-import 'features/auth/login_screen.dart';
+
 
 class StudentToolkitApp extends StatelessWidget {
   const StudentToolkitApp({super.key});
@@ -19,7 +19,7 @@ class StudentToolkitApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: const LoginScreen(),
+          home: const HomeScreen(),
           routes: AppRoutes.routes,
         );
       },
