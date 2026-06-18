@@ -22,21 +22,23 @@ router = APIRouter(prefix="/planner", tags=["Study Planner"])
 def create(
     body: PlannerCreateRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
 ):
-    return planner_service.create_task(db, user.id, body)
-
+    return planner_service.create_task(db, 1, body)
 
 @router.get("/", response_model=PlannerListResponse)
 def list_tasks(
     completed: bool | None = Query(default=None),
     priority: str | None = Query(default=None),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
 ):
-    tasks = planner_service.get_tasks(db, user.id, completed, priority)
-    progress = planner_service.get_progress(db, user.id)
-    return {"tasks": tasks, "total": progress["total"], "completed": progress["completed"]}
+    tasks = planner_service.get_tasks(db, 1, completed, priority)
+    progress = planner_service.get_progress(db, 1)
+
+    return {
+        "tasks": tasks,
+        "total": progress["total"],
+        "completed": progress["completed"],
+    }
 
 
 @router.get("/progress")
